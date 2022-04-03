@@ -19,50 +19,24 @@
       </nb-body>
       <nb-right />
     </nb-header>
-    <GLView :style="{ flex: 1 }" :onContextCreate="_onContextCreate()" />
+    <!-- <GLView :style="{ flex: 1 }" :onContextCreate="_onContextCreate()" /> -->
+    <GLView :style="{ flex: 1 }" :onContextCreate="_onGLContextCreate" />
   </nb-container>
 </template>
 
 <script>
-
-class SphereMesh extends Mesh {
-  constructor() {
-    super(
-      new SphereGeometry(0, 50, 20, 0, Math.PI * 2, 0, Math.PI * 2),
-      new MeshStandardMaterial({
-        color: 0xff0000,
-      })
-    );
-  }
-}
-
-const sphere = new SphereMesh();
-const camera = new PerspectiveCamera(100, 0.4, 0.01, 1000);
-
-let cameraInitialPositionX = 0;
-let cameraInitialPositionY = 2;
-let cameraInitialPositionZ = 5;
-
-import { Dimensions, Platform } from "react-native";
-import * as React from "react";
-import { View, TouchableWithoutFeedback, Text } from "react-native";
+import Expo from "expo";
+import React, { Component } from "react";
+import * as THREE from "three";
+import ExpoTHREE from "expo-three";
 import { GLView } from "expo-gl";
 import { Renderer } from "expo-three";
-import {
-  AmbientLight,
-  SphereGeometry,
-  Fog,
-  GridHelper,
-  Mesh,
-  MeshStandardMaterial,
-  PerspectiveCamera,
-  PointLight,
-  Scene,
-  SpotLight,
-} from "three";
+import { Dimensions, Platform } from "react-native";
 
 export default {
-  components: {},
+  components: {
+    GLView,
+  },
   props: {
     navigation: {
       type: Object,
@@ -89,52 +63,36 @@ export default {
     };
   },
   methods: {
-    async _onContextCreate(gl) {
-      // GL Parameter disruption
-      const { drawingBufferWidth: width, drawingBufferHeight: height } = gl;
-
-      // Renderer declaration and set properties
-      const renderer = new Renderer({ gl });
-      renderer.setSize(width, height);
-      renderer.setClearColor("#fff");
-
-      // Scene declaration, add a fog, and a grid helper to see axes dimensions
-      const scene = new Scene();
-      scene.fog = new Fog("#3A96C4", 1, 10000);
-      scene.add(new GridHelper(10, 10));
-
-      // Add all necessary lights
-      const ambientLight = new AmbientLight(0x101010);
-      scene.add(ambientLight);
-
-      const pointLight = new PointLight(0xffffff, 2, 1000, 1);
-      pointLight.position.set(0, 200, 200);
-      scene.add(pointLight);
-
-      const spotLight = new SpotLight(0xffffff, 0.5);
-      spotLight.position.set(0, 500, 100);
-      spotLight.lookAt(scene.position);
-      scene.add(spotLight);
-
-      // Add sphere object instance to our scene
-      scene.add(sphere);
-
-      // Set camera position and look to sphere
-      camera.position.set(
-        cameraInitialPositionX,
-        cameraInitialPositionY,
-        cameraInitialPositionZ
+    async _onGLContextCreate(gl) {
+      // 1. Scene
+      var scene = new THREE.Scene();
+      // 2. Camera
+      const camera = new THREE.PerspectiveCamera(
+        75,
+        gl.drawingBufferWidth / gl.drawingBufferHeight,
+        0.1,
+        1000
       );
+      // 3. Renderer
+      const renderer = new Renderer({ gl });
+      renderer.setSize(gl.drawingBufferWidth, gl.drawingBufferHeight);
+      const geometry = new THREE.BoxGeometry();
+      const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+      const cube = new THREE.Mesh(geometry, material);
+      scene.add(cube);
 
-      camera.lookAt(sphere.position);
+      camera.position.z = 5;
 
-      // Render function
-      const render = () => {
-        requestAnimationFrame(render);
+      //scene.add(cube);
+
+      const animate = () => {
+        requestAnimationFrame(animate);
+        cube.rotation.x += 0.01;
+        cube.rotation.y += 0.01;
         renderer.render(scene, camera);
         gl.endFrameEXP();
       };
-      render();
+      animate();
     },
   },
 };
