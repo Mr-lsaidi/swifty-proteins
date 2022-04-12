@@ -17,8 +17,8 @@ import DisplayModules from "./views/threejs.vue";
 import Search from "./views/Search.vue";
 
 import { LogBox } from "react-native";
-LogBox.ignoreLogs(["Native splash screen is already hidden."]);
-LogBox.ignoreLogs(["Warning: ..."]);
+LogBox.ignoreLogs(['The global "__expo" and "Expo" objects will']);
+// LogBox.ignoreLogs(["Warning: ..."]);
 
 const StackNavigator = createStackNavigator(
   {

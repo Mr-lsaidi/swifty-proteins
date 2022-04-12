@@ -19,7 +19,6 @@
       </nb-body>
       <nb-right />
     </nb-header>
-    <!-- <GLView :style="{ flex: 1 }" :onContextCreate="_onContextCreate()" /> -->
     <GLView :style="{ flex: 1 }" :onContextCreate="_onGLContextCreate" />
   </nb-container>
 </template>
