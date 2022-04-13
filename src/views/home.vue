@@ -2,19 +2,7 @@
   <nb-container>
     <status-bar :barStyle="'light-content'"></status-bar>
     <image-background :source="launchScreenBg" class="imageContainer">
-      <view class="logoContainer" :style="stylesObj.logoContainerStyle">
-        <image-background
-          :source="launchscreenLogo"
-          class="logo"
-          :style="stylesObj.logoStyle"
-        />
-      </view>
-      <view class="text-container">
-        <nb-h3 :style="{ marginBottom: 8 }" class="text-color-white"
-          >App To ShowCase</nb-h3
-        >
-        <nb-h3 class="text-color-white">NativeBase Components</nb-h3>
-      </view>
+      <view class="logoContainer" :style="stylesObj.logoContainerStyle"> </view>
       <view :style="{ marginBottom: 80 }">
         <nb-button :style="stylesObj.btnContainer" :onPress="onAuth">
           <nb-text> Lets Go! </nb-text>
@@ -26,8 +14,7 @@
 
 <script>
 import { Dimensions, Platform, Alert } from "react-native";
-import launchScreenBg from "../../assets/launchscreen-bg.png";
-import launchscreenLogo from "../../assets/logo-kitchen-sink.png";
+import launchScreenBg from "../../assets/bg.jpeg";
 import * as LocalAuthentication from "expo-local-authentication";
 import store from "../store";
 
@@ -41,7 +28,6 @@ export default {
   data() {
     return {
       launchScreenBg,
-      launchscreenLogo,
       stylesObj: {
         logoContainerStyle: {
           marginTop: Dimensions.get("window").height / 8,
@@ -57,65 +43,75 @@ export default {
       },
     };
   },
+  computed:{
+    loading() {
+      return store.state.loading
+    }
+  },
+  created() {
+    if (!store.state.compatible) {
+      Alert.alert("You phone not supported", "😃", [
+        {
+          text: "Cancel",
+        },
+      ]);
+    }
+  },
   methods: {
     onAuth() {
-      if (store.state.compatible) {
-        const auth = LocalAuthentication.authenticateAsync({
-          promptMessage: "Authentication",
-          fallbackLabel: "Error Password",
-        });
-        auth
-          .then((result) => {
-            if (result.error) throw new Error(result.error || result.message);
-            return result;
-          })
-          .then(() => {
-            store.isAutenticated = true;
-            store.dispatch("DISPLAY_TOAST", {
-              text:
-                "Wrong password! you canot use the APP without authentication",
-              duration: 5000,
-              position: "bottom",
-              textStyle: { color: "black" },
-              buttonText: "Okay",
-              buttonTextStyle: { color: "#008000" },
-              buttonStyle: { backgroundColor: "#e0e0e0" },
-              type: "warning",
-            });
-            store
-              .dispatch("FETCH_LIGANDS")
-              .then((res) => {
-                this.navigation.navigate("Search");
-              })
-              .catch((err) => {
-                Alert.alert(err, "😰", [
-                  {
-                    text: "Cancel",
-                  },
-                ]);
-              });
-          })
-          .catch((error) => {
-            console.info("catch: ", error.message);
-            store.dispatch("DISPLAY_TOAST", {
-              text:
-                "Wrong password! you canot use the APP without authentication",
-              duration: 5000,
-              position: "bottom",
-              textStyle: { color: "black" },
-              buttonText: "Okay",
-              buttonTextStyle: { color: "#008000" },
-              buttonStyle: { backgroundColor: "#e0e0e0" },
-              type: "warning",
-            });
+      const auth = LocalAuthentication.authenticateAsync({
+        promptMessage: "Authentication",
+        fallbackLabel: "Error Password",
+      });
+      auth
+        .then((result) => {
+          if (result.error) throw new Error(result.error || result.message);
+          return result;
+        })
+        .then(() => {
+          store.isAutenticated = true;
+          store.dispatch("DISPLAY_TOAST", {
+            text: "authentication succeeded",
+            duration: 3000,
+            position: "bottom",
+            textStyle: { color: "black" },
+            buttonText: "Okay",
+            buttonTextStyle: { color: "#008000" },
+            buttonStyle: { backgroundColor: "#e0e0e0" },
+            type: "success",
           });
-      } else {
-        Alert.alert("You phone not supported", "😃", [
-          {
-            text: "Cancel",
-          },
-        ]);
-      }
+          this.success();
+        })
+        .catch((error) => {
+          console.info("catch: ", error.message);
+          store.dispatch("DISPLAY_TOAST", {
+            text: "You must be authenticated to use the application!",
+            duration: 3000,
+            position: "bottom",
+            textStyle: { color: "black" },
+            buttonText: "Okay",
+            buttonTextStyle: { color: "white" },
+            buttonStyle: { backgroundColor: "black" },
+            type: "warning",
+          });
+        });
+    },
+    success() {
+      this.loading = true;
+      store
+        .dispatch("FETCH_LIGANDS")
+        .then(() => {
+          this.loading = false;
+          this.navigation.navigate("Search");
+        })
+        .catch((err) => {
+          console.log(err);
+          Alert.alert("There is no ligands setted", "😰", [
+            {
+              text: "Cancel",
+            },
+          ]);
+        });
     },
   },
 };

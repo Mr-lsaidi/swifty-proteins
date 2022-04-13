@@ -8,27 +8,29 @@
       <nb-item>
         <nb-icon active name="search" />
         <nb-input placeholder="Search" v-model="input" />
-        <Chase v-if="search_loading" :size="36" color="rgb(201, 76, 77)" />
       </nb-item>
       <nb-button transparent>
         <nb-text>Search</nb-text>
       </nb-button>
     </nb-header>
-    <nb-content padder>
-      <SearchList :results="results" :no_match="no_match" :navigation="navigation"/>
-    </nb-content>
+    <flat-list :data="results">
+      <SearchList
+        render-prop-fn="renderItem"
+        :item="args.item.key"
+        :navigation="navigation"
+      />
+    </flat-list>
   </nb-container>
 </template>
 
 <script>
 import ligands from "../../assets/ligands";
 import SearchList from "./SearchList.vue";
-import { Chase } from "react-native-animated-spinkit";
+import store from "../store";
 
 export default {
   components: {
     SearchList,
-    Chase,
   },
   props: {
     navigation: {
@@ -38,7 +40,6 @@ export default {
   data() {
     return {
       ligands,
-      results: [],
       no_match: {
         value: false,
         message: "",
@@ -47,35 +48,44 @@ export default {
       search_loading: false,
     };
   },
-  computed:{
-    // results(){
-    //   return this.ligands.sort()
-    // }
+  computed: {
+    results() {
+      const data = store.state.ligands;
+      return data;
+    },
+    loading() {
+      const data = store.state.loading;
+      return data;
+    },
   },
   watch: {
     input(val, oldVal) {
       if (val) {
-        this.search_loading = true;
-        this.no_match.value = false;
-        this.filter(val.toUpperCase())
-          .then((res) => {
-            this.results = res;
+        console.log(val);
+        store.commit("FELTER_LIGANDS", val)
+        // .then(res=>{
 
-            this.search_loading = false;
-          })
-          .catch((err) => {
-            this.results = [];
-            this.no_match = {
-              value: true,
-              message: `no resultes match '${val}'`,
-            };
-            this.search_loading = false;
-          });
+        // })
+        //     this.loading = true;
+        //     this.no_match.value = false;
+        //     this.filter(val.toUpperCase())
+        //       .then((res) => {
+        //         this.results = res;
+        //         this.search_loading = false;
+        //       })
+        //       .catch((err) => {
+        //         this.results = [];
+        //         this.no_match = {
+        //           value: true,
+        //           message: `no resultes match '${val}'`,
+        //         };
+        //         this.search_loading = false;
+        //       });
       }
     },
-    search_loading(val) {
-      console.log(val);
-    },
+    // search_loading(val) {
+    //   console.log(val);
+    // },
   },
   methods: {
     search() {
