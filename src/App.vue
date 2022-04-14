@@ -1,6 +1,6 @@
 <template>
   <root>
-    <Loader v-if="loading"/>
+    <Loader v-if="loading" />
     <app-navigation v-else></app-navigation>
   </root>
 </template>
@@ -10,18 +10,14 @@ import {
   createAppContainer,
   createStackNavigator,
   createBottomTabNavigator,
-  createMaterialTopTabNavigator
+  createMaterialTopTabNavigator,
 } from "vue-native-router";
 import { Root } from "native-base";
 import HomeScreen from "./views/home.vue";
 import DisplayModules from "./views/threejs.vue";
 import Search from "./views/Search.vue";
-import Loader from "../src/components/Loader.vue"
-import store from "./store"
-
-import { LogBox } from "react-native";
-LogBox.ignoreLogs(['The global "__expo" and "Expo" objects will']);
-// LogBox.ignoreLogs(["Warning: ..."]);
+import Loader from "../src/components/Loader.vue";
+import store from "./store";
 
 const StackNavigator = createStackNavigator(
   {
@@ -39,10 +35,10 @@ const AppNavigation = createAppContainer(StackNavigator);
 
 export default {
   components: { Root, AppNavigation, Loader },
-  computed:{
+  computed: {
     loading() {
-      return store.state.loading
-    }
-  }
+      return store.state.loading;
+    },
+  },
 };
 </script>

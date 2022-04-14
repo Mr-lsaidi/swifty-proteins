@@ -49,6 +49,7 @@ export default {
     }
   },
   created() {
+    store.state.navigation = this.navigation
     if (!store.state.compatible) {
       Alert.alert("You phone not supported", "😃", [
         {

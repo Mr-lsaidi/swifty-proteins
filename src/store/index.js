@@ -7,6 +7,8 @@ Vue.use(Vuex);
 
 const store = new Vuex.Store({
   state: {
+    navigation: undefined,
+    appState: undefined,
     isAutenticated: false,
     isCompatible: false,
     UserConectionCode: undefined,
@@ -20,11 +22,11 @@ const store = new Vuex.Store({
     SET_LOADER(state, data) {
       state.loading = data;
     },
-    FELTER_LIGANDS(state, value){
+    FELTER_LIGANDS(state, value) {
       state.ligands.map((element) => {
         console.log(element.key);
       });
-    }
+    },
   },
   actions: {
     FETCH_LIGANDS(context) {
@@ -47,15 +49,14 @@ const store = new Vuex.Store({
     async FELTER_LIGANDS(context, val) {
       // return new Promise(async (resolve, reject) => {
       //   let res = [];
-        // await context.state.ligands.forEach((element) => {
-        //   console.log(element);
-        //   if (element.includes(val)) {
-        //     res.push(element);
-        //   }
-        // });
-        
-        // if (res.length) resolve(res);
-        // else reject(null);
+      // await context.state.ligands.forEach((element) => {
+      //   console.log(element);
+      //   if (element.includes(val)) {
+      //     res.push(element);
+      //   }
+      // });
+      // if (res.length) resolve(res);
+      // else reject(null);
       // });
     },
     DISPLAY_TOAST(context, params) {
