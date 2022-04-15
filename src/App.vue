@@ -1,7 +1,6 @@
 <template>
   <root>
-    <Loader v-if="loading" />
-    <app-navigation v-else></app-navigation>
+    <app-navigation></app-navigation>
   </root>
 </template>
 
@@ -24,7 +23,7 @@ const StackNavigator = createStackNavigator(
     Home: HomeScreen,
     Search,
     DisplayModules,
-    // User: TabNavigator,
+    Loader
   },
   {
     headerMode: "none",
@@ -34,11 +33,6 @@ const StackNavigator = createStackNavigator(
 const AppNavigation = createAppContainer(StackNavigator);
 
 export default {
-  components: { Root, AppNavigation, Loader },
-  computed: {
-    loading() {
-      return store.state.loading;
-    },
-  },
+  components: { Root, AppNavigation },
 };
 </script>

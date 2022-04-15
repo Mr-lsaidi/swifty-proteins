@@ -13,19 +13,18 @@ const store = new Vuex.Store({
     isCompatible: false,
     UserConectionCode: undefined,
     ligands: undefined,
-    loading: false,
+    filtred_ligands: undefined,
   },
   mutations: {
+    UPDATE_FILRE_LIGEANDS(state, data) {
+      state.filtred_ligands = data;
+    },
+    FILRE_LIGEANDS_LIGEANDS(state) {
+      state.filtred_ligands = state.ligands;
+    },
     SET_LIGEANDS(state, data) {
+      state.filtred_ligands = data;
       state.ligands = data;
-    },
-    SET_LOADER(state, data) {
-      state.loading = data;
-    },
-    FELTER_LIGANDS(state, value) {
-      state.ligands.map((element) => {
-        console.log(element.key);
-      });
     },
   },
   actions: {
@@ -43,21 +42,27 @@ const store = new Vuex.Store({
           console.log("reject");
           reject();
         }
-        reject();
       });
     },
     async FELTER_LIGANDS(context, val) {
-      // return new Promise(async (resolve, reject) => {
-      //   let res = [];
-      // await context.state.ligands.forEach((element) => {
-      //   console.log(element);
-      //   if (element.includes(val)) {
-      //     res.push(element);
-      //   }
-      // });
-      // if (res.length) resolve(res);
-      // else reject(null);
-      // });
+      return new Promise(async (resolve, reject) => {
+        let res = [];
+        await context.state.ligands.forEach((element) => {
+          const key = element.key;
+          if (key.includes(val)) {
+            res.push({ key });
+          }
+        });
+        if (res.length) {
+          context.commit("UPDATE_FILRE_LIGEANDS", res);
+          resolve();
+        } else {
+          context.commit("UPDATE_FILRE_LIGEANDS", [
+            { key: "not_found", not_found: `ligand "${val}" not found` },
+          ]);
+          reject();
+        }
+      });
     },
     DISPLAY_TOAST(context, params) {
       Toast.show(params);

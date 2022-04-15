@@ -27,6 +27,7 @@ export default {
   },
   data() {
     return {
+      isEnrolledAsync: undefined,
       launchScreenBg,
       stylesObj: {
         logoContainerStyle: {
@@ -43,15 +44,14 @@ export default {
       },
     };
   },
-  computed:{
-    loading() {
-      return store.state.loading
-    }
-  },
-  created() {
-    store.state.navigation = this.navigation
+  async created() {
+    store.state.navigation = this.navigation;
+    store.state.compatible = await LocalAuthentication.hasHardwareAsync();
+
+    this.isEnrolledAsync = true//await LocalAuthentication.isEnrolledAsync();
+    console.log("isEnrolledAsync -->", this.isEnrolledAsync);
     if (!store.state.compatible) {
-      Alert.alert("You phone not supported", "😃", [
+      Alert.alert("Your phone not supported", "😃", [
         {
           text: "Cancel",
         },
@@ -60,49 +60,53 @@ export default {
   },
   methods: {
     onAuth() {
-      const auth = LocalAuthentication.authenticateAsync({
-        promptMessage: "Authentication",
-        fallbackLabel: "Error Password",
-      });
-      auth
-        .then((result) => {
-          if (result.error) throw new Error(result.error || result.message);
-          return result;
-        })
-        .then(() => {
-          store.isAutenticated = true;
-          store.dispatch("DISPLAY_TOAST", {
-            text: "authentication succeeded",
-            duration: 3000,
-            position: "bottom",
-            textStyle: { color: "black" },
-            buttonText: "Okay",
-            buttonTextStyle: { color: "#008000" },
-            buttonStyle: { backgroundColor: "#e0e0e0" },
-            type: "success",
-          });
-          this.success();
-        })
-        .catch((error) => {
-          console.info("catch: ", error.message);
-          store.dispatch("DISPLAY_TOAST", {
-            text: "You must be authenticated to use the application!",
-            duration: 3000,
-            position: "bottom",
-            textStyle: { color: "black" },
-            buttonText: "Okay",
-            buttonTextStyle: { color: "white" },
-            buttonStyle: { backgroundColor: "black" },
-            type: "warning",
-          });
+      if (this.isEnrolledAsync) {
+        const auth = LocalAuthentication.authenticateAsync({
+          promptMessage: "Authentication",
+          fallbackLabel: "Error Password",
         });
+        auth
+          .then((result) => {
+            if (result.error) throw new Error(result.error || result.message);
+            return result;
+          })
+          .then(() => {
+            store.isAutenticated = true;
+            store.dispatch("DISPLAY_TOAST", {
+              text: "authentication succeeded",
+              duration: 2000,
+              position: "bottom",
+              textStyle: { color: "black" },
+              buttonText: "Okay",
+              buttonTextStyle: { color: "#008000" },
+              buttonStyle: { backgroundColor: "#e0e0e0" },
+              type: "success",
+            });
+            this.success();
+          })
+          .catch((error) => {
+            console.info("catch: ", error.message);
+            store.dispatch("DISPLAY_TOAST", {
+              text: "You must be authenticated to use the application!",
+              duration: 2000,
+              position: "bottom",
+              textStyle: { color: "black" },
+              buttonText: "Okay",
+              buttonTextStyle: { color: "white" },
+              buttonStyle: { backgroundColor: "black" },
+              type: "warning",
+            });
+          });
+      }else{
+        console.log("Determine that no whether a face or fingerprint scanner is available on the device");
+        this.success();
+      }
     },
     success() {
-      this.loading = true;
+      this.navigation.navigate("Loader");
       store
         .dispatch("FETCH_LIGANDS")
         .then(() => {
-          this.loading = false;
           this.navigation.navigate("Search");
         })
         .catch((err) => {

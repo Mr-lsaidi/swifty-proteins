@@ -16,7 +16,7 @@
     <flat-list :data="results">
       <SearchList
         render-prop-fn="renderItem"
-        :item="args.item.key"
+        :item="args.item"
         :navigation="navigation"
       />
     </flat-list>
@@ -50,42 +50,27 @@ export default {
   },
   computed: {
     results() {
-      const data = store.state.ligands;
-      return data;
-    },
-    loading() {
-      const data = store.state.loading;
+      const data = store.state.filtred_ligands;
       return data;
     },
   },
   watch: {
     input(val, oldVal) {
       if (val) {
-        console.log(val);
-        store.commit("FELTER_LIGANDS", val)
-        // .then(res=>{
-
-        // })
-        //     this.loading = true;
-        //     this.no_match.value = false;
-        //     this.filter(val.toUpperCase())
-        //       .then((res) => {
-        //         this.results = res;
-        //         this.search_loading = false;
-        //       })
-        //       .catch((err) => {
-        //         this.results = [];
-        //         this.no_match = {
-        //           value: true,
-        //           message: `no resultes match '${val}'`,
-        //         };
-        //         this.search_loading = false;
-        //       });
+        // console.log(val.toUpperCase());
+        this.search_loading = true;
+        store
+          .dispatch("FELTER_LIGANDS", val.toUpperCase())
+          .then(() => {
+            this.search_loading = false;
+          })
+          .catch((err) => {
+            this.search_loading = false;
+          });
+      }else{
+        store.commit("FILRE_LIGEANDS_LIGEANDS")
       }
     },
-    // search_loading(val) {
-    //   console.log(val);
-    // },
   },
   methods: {
     search() {

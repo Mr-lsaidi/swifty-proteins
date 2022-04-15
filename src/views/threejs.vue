@@ -6,7 +6,10 @@
       iosBarStyle="light-content"
     >
       <nb-left>
-        <nb-button transparent :onPress="() => this.props.navigation.goBack()">
+        <nb-button
+          transparent
+          :onPress="() => this.props.navigation.navigate('Search')"
+        >
           <nb-icon
             name="arrow-back"
             class="text-color-white"
@@ -17,24 +20,25 @@
       <nb-body>
         <nb-title :style="{ color: '#fff' }">Display module</nb-title>
       </nb-body>
-      <nb-right />
+      <nb-right>
+        <Logout :navigation="navigation" />
+      </nb-right>
     </nb-header>
     <GLView :style="{ flex: 1 }" :onContextCreate="_onGLContextCreate" />
   </nb-container>
 </template>
 
 <script>
-import Expo from "expo";
-import React, { Component } from "react";
 import * as THREE from "three";
-import ExpoTHREE from "expo-three";
 import { GLView } from "expo-gl";
 import { Renderer } from "expo-three";
 import { Dimensions, Platform } from "react-native";
+import Logout from "../components/Logout.vue";
 
 export default {
   components: {
     GLView,
+    Logout,
   },
   props: {
     navigation: {
@@ -87,6 +91,7 @@ export default {
       const animate = () => {
         requestAnimationFrame(animate);
         cube.rotation.x += 0.01;
+        cube.rotation.z += 0.01;
         cube.rotation.y += 0.01;
         renderer.render(scene, camera);
         gl.endFrameEXP();
