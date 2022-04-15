@@ -48,8 +48,9 @@ export default {
     store.state.navigation = this.navigation;
     store.state.compatible = await LocalAuthentication.hasHardwareAsync();
 
-    this.isEnrolledAsync = true//await LocalAuthentication.isEnrolledAsync();
+    this.isEnrolledAsync = await LocalAuthentication.isEnrolledAsync();
     console.log("isEnrolledAsync -->", this.isEnrolledAsync);
+    
     if (!store.state.compatible) {
       Alert.alert("Your phone not supported", "😃", [
         {

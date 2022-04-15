@@ -5,14 +5,15 @@
       rounded
       :style="{ backgroundColor: 'rgb(201, 76, 77)' }"
     >
-      <nb-item>
+      <nb-item >
         <nb-icon active name="search" />
         <nb-input placeholder="Search" v-model="input" />
+        <Wave v-if='search_loading' :size="25" :style="{margin: 6}" color="rgb(201, 76, 77)" />
       </nb-item>
       <nb-button transparent>
         <nb-text>Search</nb-text>
       </nb-button>
-    </nb-header>
+    </nb-header>    
     <flat-list :data="results">
       <SearchList
         render-prop-fn="renderItem"
@@ -27,10 +28,12 @@
 import ligands from "../../assets/ligands";
 import SearchList from "./SearchList.vue";
 import store from "../store";
+import { Wave } from "react-native-animated-spinkit";
 
 export default {
   components: {
     SearchList,
+    Wave
   },
   props: {
     navigation: {
@@ -39,13 +42,13 @@ export default {
   },
   data() {
     return {
+      store,
       ligands,
       no_match: {
         value: false,
         message: "",
       },
       input: "",
-      search_loading: false,
     };
   },
   computed: {
@@ -53,22 +56,27 @@ export default {
       const data = store.state.filtred_ligands;
       return data;
     },
+    search_loading() {
+      const data = store.state.search_loading;
+      return data;
+    },
   },
   watch: {
     input(val, oldVal) {
       if (val) {
-        // console.log(val.toUpperCase());
-        this.search_loading = true;
-        store
-          .dispatch("FELTER_LIGANDS", val.toUpperCase())
-          .then(() => {
-            this.search_loading = false;
-          })
-          .catch((err) => {
-            this.search_loading = false;
-          });
-      }else{
-        store.commit("FILRE_LIGEANDS_LIGEANDS")
+        store.state.search_loading = true;
+        setTimeout(() => {
+          store
+            .dispatch("FELTER_LIGANDS", val.toUpperCase())
+            .then(() => {
+              store.state.search_loading = false;
+            })
+            .catch((err) => {
+              store.state.search_loading = false;
+            });
+        }, 0);
+      } else {
+        store.commit("FILRE_LIGEANDS_LIGEANDS");
       }
     },
   },

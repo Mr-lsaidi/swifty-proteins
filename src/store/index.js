@@ -14,6 +14,7 @@ const store = new Vuex.Store({
     UserConectionCode: undefined,
     ligands: undefined,
     filtred_ligands: undefined,
+    search_loading: false
   },
   mutations: {
     UPDATE_FILRE_LIGEANDS(state, data) {
