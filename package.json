@@ -31,6 +31,7 @@
     "@expo/metro-config": "^0.1.57",
     "@react-native-community/picker": "^1.8.1",
     "@react-native-picker/picker": "1.9.2",
+    "axios": "^0.26.1",
     "expo": "^40.0.0",
     "expo-app-loading": "^1.0.1",
     "expo-asset": "~8.2.1",

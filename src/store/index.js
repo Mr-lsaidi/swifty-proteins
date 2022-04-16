@@ -2,11 +2,13 @@ import Vue from "vue-native-core";
 import Vuex from "vuex";
 import ligands from "../../assets/ligands";
 import { Toast } from "native-base";
+import { apiRequest } from "../api";
 
 Vue.use(Vuex);
 
 const store = new Vuex.Store({
   state: {
+    isEnrolledAsync: false,
     navigation: undefined,
     appState: undefined,
     isAutenticated: false,
@@ -14,7 +16,8 @@ const store = new Vuex.Store({
     UserConectionCode: undefined,
     ligands: undefined,
     filtred_ligands: undefined,
-    search_loading: false
+    search_loading: false,
+    loading: false
   },
   mutations: {
     UPDATE_FILRE_LIGEANDS(state, data) {
@@ -29,6 +32,18 @@ const store = new Vuex.Store({
     },
   },
   actions: {
+    GET_LIGAND(context, param) {
+      return apiRequest()
+        .get(`${param}_model.pdb`)
+        .then(({data}) => {
+          console.log(data);
+          return data;
+        })
+        .catch((err) => {
+          console.log(err);
+          return err;
+        });
+    },
     FETCH_LIGANDS(context) {
       return new Promise(async (resolve, reject) => {
         if (Object.entries(ligands).length) {

@@ -1,25 +1,30 @@
 <template>
-  <nb-container>
-    <status-bar :barStyle="'light-content'"></status-bar>
-    <image-background :source="launchScreenBg" class="imageContainer">
-      <view class="logoContainer" :style="stylesObj.logoContainerStyle"> </view>
-      <view :style="{ marginBottom: 80 }">
-        <nb-button :style="stylesObj.btnContainer" :onPress="onAuth">
-          <nb-text> Lets Go! </nb-text>
-        </nb-button>
-      </view>
-    </image-background>
-  </nb-container>
+  <view class="container">
+    <Loader v-if="store.state.loading" />
+    <nb-container v-else>
+      <status-bar :barStyle="'light-content'"></status-bar>
+      <image-background :source="launchScreenBg" class="imageContainer">
+        <view class="logoContainer" :style="stylesObj.logoContainerStyle">
+        </view>
+        <view :style="{ marginBottom: 80 }">
+          <nb-button :style="stylesObj.btnContainer" :onPress="onAuth">
+            <nb-text> Lets Go! </nb-text>
+          </nb-button>
+        </view>
+      </image-background>
+    </nb-container>
+  </view>
 </template>
 
 <script>
 import { Dimensions, Platform, Alert } from "react-native";
 import launchScreenBg from "../../assets/bg.jpeg";
 import * as LocalAuthentication from "expo-local-authentication";
+import Loader from "../components/Loader.vue";
 import store from "../store";
 
 export default {
-  components: {},
+  components: { Loader },
   props: {
     navigation: {
       type: Object,
@@ -27,7 +32,7 @@ export default {
   },
   data() {
     return {
-      isEnrolledAsync: undefined,
+      store,
       launchScreenBg,
       stylesObj: {
         logoContainerStyle: {
@@ -48,9 +53,14 @@ export default {
     store.state.navigation = this.navigation;
     store.state.compatible = await LocalAuthentication.hasHardwareAsync();
 
-    this.isEnrolledAsync = await LocalAuthentication.isEnrolledAsync();
-    console.log("isEnrolledAsync -->", this.isEnrolledAsync);
-    
+    store.state.isEnrolledAsync = await LocalAuthentication.isEnrolledAsync();
+    console.log("isEnrolledAsync -->", store.state.isEnrolledAsync);
+
+    if (!store.state.isEnrolledAsync) {
+      //if the Enrolled found not found go to the Search page directly
+      this.success();
+    }
+
     if (!store.state.compatible) {
       Alert.alert("Your phone not supported", "😃", [
         {
@@ -61,69 +71,71 @@ export default {
   },
   methods: {
     onAuth() {
-      if (this.isEnrolledAsync) {
-        const auth = LocalAuthentication.authenticateAsync({
-          promptMessage: "Authentication",
-          fallbackLabel: "Error Password",
-        });
-        auth
-          .then((result) => {
-            if (result.error) throw new Error(result.error || result.message);
-            return result;
-          })
-          .then(() => {
-            store.isAutenticated = true;
-            store.dispatch("DISPLAY_TOAST", {
-              text: "authentication succeeded",
-              duration: 2000,
-              position: "bottom",
-              textStyle: { color: "black" },
-              buttonText: "Okay",
-              buttonTextStyle: { color: "#008000" },
-              buttonStyle: { backgroundColor: "#e0e0e0" },
-              type: "success",
-            });
-            this.success();
-          })
-          .catch((error) => {
-            console.info("catch: ", error.message);
-            store.dispatch("DISPLAY_TOAST", {
-              text: "You must be authenticated to use the application!",
-              duration: 2000,
-              position: "bottom",
-              textStyle: { color: "black" },
-              buttonText: "Okay",
-              buttonTextStyle: { color: "white" },
-              buttonStyle: { backgroundColor: "black" },
-              type: "warning",
-            });
+      const auth = LocalAuthentication.authenticateAsync({
+        promptMessage: "Authentication",
+        fallbackLabel: "Error Password",
+      });
+      auth
+        .then((result) => {
+          if (result.error) throw new Error(result.error || result.message);
+          return result;
+        })
+        .then(() => {
+          store.isAutenticated = true;
+          store.dispatch("DISPLAY_TOAST", {
+            text: "authentication succeeded",
+            duration: 2000,
+            position: "bottom",
+            textStyle: { color: "black" },
+            buttonText: "Okay",
+            buttonTextStyle: { color: "#008000" },
+            buttonStyle: { backgroundColor: "#e0e0e0" },
+            type: "success",
           });
-      }else{
-        console.log("Determine that no whether a face or fingerprint scanner is available on the device");
-        this.success();
-      }
+          this.success();
+        })
+        .catch((error) => {
+          console.info("catch: ", error.message);
+          store.dispatch("DISPLAY_TOAST", {
+            text: "You must be authenticated to use the application!",
+            duration: 2000,
+            position: "bottom",
+            textStyle: { color: "black" },
+            buttonText: "Okay",
+            buttonTextStyle: { color: "white" },
+            buttonStyle: { backgroundColor: "black" },
+            type: "warning",
+          });
+        });
     },
     success() {
-      this.navigation.navigate("Loader");
-      store
-        .dispatch("FETCH_LIGANDS")
-        .then(() => {
-          this.navigation.navigate("Search");
-        })
-        .catch((err) => {
-          console.log(err);
-          Alert.alert("There is no ligands setted", "😰", [
-            {
-              text: "Cancel",
-            },
-          ]);
-        });
+      setTimeout(() => {
+        store
+          .dispatch("FETCH_LIGANDS")
+          .then(() => {
+            store.state.loading = false;
+            this.navigation.navigate("Search");
+          })
+          .catch((err) => {
+            store.state.loading = false;
+            console.log(err);
+            Alert.alert("There is no ligands set ted", "😰", [
+              {
+                text: "Cancel",
+              },
+            ]);
+          });
+      }, 500);
+      store.state.loading = true;
     },
   },
 };
 </script>
 
 <style>
+.container {
+  flex: 1;
+}
 .imageContainer {
   flex: 1;
 }

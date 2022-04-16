@@ -14,20 +14,22 @@ export default {
     appState() {
       return store.state.appState;
     },
-    navigation(){
-      return store.state.navigation
-    }
+    navigation() {
+      return store.state.navigation;
+    },
   },
   async created() {
-    if (AppState._eventHandlers.change.size == 0) {
+    if (AppState._eventHandlers.change.size == 0) { // for dev
       AppState.addEventListener("change", (nextAppState) => {
         this.appState = nextAppState;
         if (nextAppState == "background") {
           console.info("App has come to the foreground!");
-          store.state.loading = false
-          if (this.navigation){
+          store.state.loading = false;
+          if (this.navigation) {
             console.info("------- back to home page ---------");
-            this.navigation.navigate("Home");
+            store.state.isEnrolledAsync
+              ? this.navigation.navigate("Home") //back to home page if the Enrolled found
+              : this.navigation.navigate("Search"); //back to search page if the Enrolled not found
           }
         }
       });

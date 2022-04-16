@@ -74,7 +74,7 @@ export default {
             .catch((err) => {
               store.state.search_loading = false;
             });
-        }, 0);
+        }, 100);
       } else {
         store.commit("FILRE_LIGEANDS_LIGEANDS");
       }

@@ -20,7 +20,7 @@
       <nb-body>
         <nb-title :style="{ color: '#fff' }">Display module</nb-title>
       </nb-body>
-      <nb-right>
+      <nb-right v-if="store.state.isEnrolledAsync">
         <Logout :navigation="navigation" />
       </nb-right>
     </nb-header>
@@ -34,6 +34,7 @@ import { GLView } from "expo-gl";
 import { Renderer } from "expo-three";
 import { Dimensions, Platform } from "react-native";
 import Logout from "../components/Logout.vue";
+import store from "../store";
 
 export default {
   components: {
@@ -50,6 +51,7 @@ export default {
   },
   data() {
     return {
+      store,
       stylesObj: {
         logoContainerStyle: {
           marginTop: Dimensions.get("window").height / 8,
@@ -92,7 +94,7 @@ export default {
         requestAnimationFrame(animate);
         cube.rotation.x += 0.01;
         cube.rotation.z += 0.01;
-        cube.rotation.y += 0.01;
+        // cube.rotation.y += 0.01;
         renderer.render(scene, camera);
         gl.endFrameEXP();
       };
