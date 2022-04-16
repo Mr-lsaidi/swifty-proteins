@@ -23,7 +23,7 @@
 </template>
 
 <script>
-import { Dimensions, Platform } from "react-native";
+import { Dimensions, Platform, Alert } from "react-native";
 import SearchBar from "../components/SeachBar.vue";
 import Logout from "../components/Logout.vue";
 import store from "../store";
@@ -39,6 +39,26 @@ export default {
     navigation: {
       type: Object,
     },
+  },
+  mounted() {
+    store.state.loading = false;
+    setTimeout(() => {
+      store
+        .dispatch("FETCH_LIGANDS")
+        .then(() => {
+          store.state.loading = false;
+          this.navigation.navigate("Search");
+        })
+        .catch((err) => {
+          store.state.loading = false;
+          console.log(err);
+          Alert.alert("There is no ligands set ted", "😰", [
+            {
+              text: "Cancel",
+            },
+          ]);
+        });
+    }, 500);
   },
   data() {
     return {

@@ -6,8 +6,14 @@
       <image-background :source="launchScreenBg" class="imageContainer">
         <view class="logoContainer" :style="stylesObj.logoContainerStyle">
         </view>
-        <view :style="{ marginBottom: 80 }">
+        <view v-if="store.state.isEnrolledAsync" :style="{ marginBottom: 80 }">
           <nb-button :style="stylesObj.btnContainer" :onPress="onAuth">
+            <nb-text> Authentication </nb-text>
+            <nb-icon active name="finger-print-outline" />
+          </nb-button>
+        </view>
+        <view v-else :style="{ marginBottom: 80 }">
+          <nb-button :style="stylesObj.btnContainer" :onPress="success">
             <nb-text> Lets Go! </nb-text>
           </nb-button>
         </view>
@@ -52,9 +58,6 @@ export default {
   async created() {
     store.state.navigation = this.navigation;
     store.state.compatible = await LocalAuthentication.hasHardwareAsync();
-
-    store.state.isEnrolledAsync = await LocalAuthentication.isEnrolledAsync();
-    console.log("isEnrolledAsync -->", store.state.isEnrolledAsync);
 
     if (!store.state.isEnrolledAsync) {
       //if the Enrolled found not found go to the Search page directly
@@ -109,24 +112,7 @@ export default {
         });
     },
     success() {
-      setTimeout(() => {
-        store
-          .dispatch("FETCH_LIGANDS")
-          .then(() => {
-            store.state.loading = false;
-            this.navigation.navigate("Search");
-          })
-          .catch((err) => {
-            store.state.loading = false;
-            console.log(err);
-            Alert.alert("There is no ligands set ted", "😰", [
-              {
-                text: "Cancel",
-              },
-            ]);
-          });
-      }, 500);
-      store.state.loading = true;
+      this.navigation.navigate("Search");
     },
   },
 };
