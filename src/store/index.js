@@ -36,7 +36,7 @@ const store = new Vuex.Store({
       return apiRequest()
         .get(`${param}_model.pdb`)
         .then(({data}) => {
-          console.log(data);
+          // console.log(data);
           return data;
         })
         .catch((err) => {

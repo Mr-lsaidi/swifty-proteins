@@ -18,8 +18,8 @@ import Search from "./views/Search.vue";
 
 const StackNavigator = createStackNavigator(
   {
-    Home: HomeScreen,
-    Search,
+    // Home: HomeScreen,
+    // Search,
     DisplayModules,
   },
   {
