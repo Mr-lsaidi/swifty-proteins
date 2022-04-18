@@ -67,7 +67,7 @@ export default {
         store.state.search_loading = true;
         setTimeout(() => {
           store
-            .dispatch("FELTER_LIGANDS", val.toUpperCase())
+            .dispatch("FELTER_LIGANDS", val)
             .then(() => {
               store.state.search_loading = false;
             })

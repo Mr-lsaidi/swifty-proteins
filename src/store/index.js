@@ -17,7 +17,7 @@ const store = new Vuex.Store({
     ligands: undefined,
     filtred_ligands: undefined,
     search_loading: false,
-    loading: false
+    loading: false,
   },
   mutations: {
     UPDATE_FILRE_LIGEANDS(state, data) {
@@ -33,16 +33,16 @@ const store = new Vuex.Store({
   },
   actions: {
     GET_LIGAND(context, param) {
-      return apiRequest()
-        .get(`${param}_model.pdb`)
-        .then(({data}) => {
-          // console.log(data);
-          return data;
-        })
-        .catch((err) => {
-          console.log(err);
-          return err;
-        });
+      return new Promise((resolve, reject) => {
+        apiRequest()
+          .get(`${param}_model.pdb`)
+          .then(({ data }) => {
+            resolve(data);
+          })
+          .catch((e) => {
+            reject(e);
+          });
+      });
     },
     FETCH_LIGANDS(context) {
       return new Promise(async (resolve, reject) => {
@@ -65,7 +65,7 @@ const store = new Vuex.Store({
         let res = [];
         await context.state.ligands.forEach((element) => {
           const key = element.key;
-          if (key.includes(val)) {
+          if (key.includes(val.toUpperCase()) || key.includes(val)) {
             res.push({ key });
           }
         });

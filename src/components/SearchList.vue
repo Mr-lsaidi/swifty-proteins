@@ -52,15 +52,9 @@ export default {
   methods: {
     selectLigand(elem) {
       console.log("click", elem);
-      store.state.loading = true;
-      // store.dispatch("GET_LIGAND", elem)
-      setTimeout(() => {
-        store.state.loading = false;
-        this.navigation.navigate("DisplayModules", {
-          data: elem,
-        });
-        
-      }, 2000);
+      this.navigation.navigate("DisplayModules", {
+        data: elem,
+      });
     },
   },
 };
