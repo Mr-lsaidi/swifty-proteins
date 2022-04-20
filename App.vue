@@ -7,7 +7,7 @@ import Setup from "./src/boot/setup.vue";
 import store from "./src/store";
 import { LogBox, AppState } from "react-native";
 import * as LocalAuthentication from "expo-local-authentication";
-LogBox.ignoreLogs(['The global "__expo" and "Expo" objects will']);
+LogBox.ignoreLogs(['The global "__expo" and "Expo" objects will', 'THREE.Quaternion: .inverse() has been renamed to invert().']);
 
 export default {
   components: { Setup },
@@ -40,7 +40,6 @@ export default {
             store.state.isEnrolledAsync
               ? this.navigation.navigate("Home") //back to home page if the Enrolled found
               : this.navigation.navigate("Search"); //back to search page if the Enrolled not found
-              console.log('in | go to :', store.state.isEnrolledAsync ? 'Home': 'Search');
           }
         }
       });

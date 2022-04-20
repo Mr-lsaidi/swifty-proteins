@@ -26,7 +26,11 @@
           <Logout :navigation="navigation" />
         </nb-right>
       </nb-header>
-      <OrbitControlsView :style="{ flex: 1 }" :camera="camera">
+      <OrbitControlsView
+        :key="store.state.orientation"
+        :style="{ flex: 1 }"
+        :camera="camera"
+      >
         <GLView :style="{ flex: 1 }" :onContextCreate="_onGLContextCreate" />
       </OrbitControlsView>
 
@@ -63,6 +67,7 @@ import parsePdb from "parse-pdb";
 import { Dimensions, Platform, Alert } from "react-native";
 import Logout from "../components/Logout.vue";
 import store from "../store";
+// import { CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 
 export default {
   components: {
@@ -78,7 +83,7 @@ export default {
   },
   async mounted() {
     console.log("Search for: ", this.navigation.getParam("data"));
-    await this.loadPdb(this.navigation.getParam("data") || "co2");
+    await this.loadPdb(this.navigation.getParam("data") || "0e5");
   },
   data() {
     return {
@@ -119,18 +124,18 @@ export default {
     },
     async _onGLContextCreate(gl) {
       const { drawingBufferWidth: width, drawingBufferHeight: height } = gl;
-      const sceneColor = 0x6ad6f0;
+      const sceneColor = 0x5353535;
 
       this.scene = new THREE.Scene();
 
       // Create a WebGLRenderer without a DOM element
       this.renderer = new Renderer({ gl });
       this.renderer.setSize(width, height);
-      // renderer.setClearColor(sceneColor);
+      this.renderer.setClearColor(sceneColor);
 
       this.camera = new THREE.PerspectiveCamera(70, width / height, 0.01, 1000);
-      // this.camera.position.set(14.0, 14.0, 14.0);
-      this.camera.position.set(2, 5, 5);
+      this.camera.position.set(5.0, 5.0, 14.0);
+      // this.camera.position.set(5, 5, 5);
 
       const ambientLight = new THREE.DirectionalLight(0xffffff, 0.9);
       ambientLight.position.copy(this.camera.position);
@@ -156,18 +161,18 @@ export default {
           });
           // All computations are in world space
           // But the group might not be in world space
-          group.matrixWorld.getInverse(invMatrixWorld);
+          group.matrixWorld.invert(invMatrixWorld);
           groupBox.applyMatrix4(invMatrixWorld);
           groupBox.getCenter(optionalTarget);
           return optionalTarget;
         };
       })();
 
-      var group = this.buildGroup(100);
+      var group = this.buildGroup();
       var center = computeGroupCenter(group);
       console.log("center is", center);
-      var axis = new THREE.AxesHelper(7.5);
-      this.scene.add(axis);
+      // var axis = new THREE.AxesHelper(7.5);
+      // this.scene.add(axis);
       this.scene.add(group);
       group.position.copy(center).negate(); // move group in the opposite way
 
@@ -182,6 +187,12 @@ export default {
       const render = () => {
         requestAnimationFrame(render);
         this.renderer.render(this.scene, this.camera);
+        ambientLight.position.set(
+          this.camera.position.x,
+          this.camera.position.y,
+          this.camera.position.z
+        );
+
         animated_update();
         gl.endFrameEXP();
       };
@@ -192,22 +203,26 @@ export default {
       store
         .dispatch("GET_LIGAND", pdb)
         .then((string) => {
+          // console.log(string);
           return {
             parsedPdb: parsePdb(string),
-            connections: [...string.match(/^CONECT.*/gm)].map((connection) => {
-              const connectionIds = connection
-                .replace(/(CONECT| +)/g, " ")
-                .trim()
-                .split(" ");
-              return connectionIds.map((num) => parseInt(num, 10));
-            }),
+            connections: [...(string.match(/^CONECT.*/gm) || [])].map(
+              (connection) => {
+                const connectionIds = connection
+                  .replace(/(CONECT| +)/g, " ")
+                  .trim()
+                  .split(" ");
+                return connectionIds.map((num) => parseInt(num, 10));
+              }
+            ),
           };
+          s;
         })
         .then(({ parsedPdb, connections }) => {
-          const atomsMap = new Map();
+          const atomsMap = {};
 
           parsedPdb.atoms.forEach(function addToMap(atom) {
-            atomsMap.set(atom.serial, atom);
+            atomsMap[atom.serial] = atom;
           });
 
           this.parsedPdb = {
@@ -215,7 +230,7 @@ export default {
             connections,
           };
           store.state.loading = false;
-          console.log("-->", this.parsedPdb);
+          // console.log("-->", this.parsedPdb);
         })
         .catch((err) => {
           console.log(err);
@@ -230,47 +245,55 @@ export default {
     buildGroup() {
       const COLORS = [0xffffff, 0xd40000, 0x0084ff];
       const group = new THREE.Group();
+      const atoms = this.parsedPdb.atoms;
 
-
-      for (let [key, value] of this.parsedPdb.atoms) {
+      for (let [key, value] of Object.entries(atoms)) {
         var color = COLORS[Math.floor(Math.random() * COLORS.length)];
         var mesh = new THREE.Mesh(
-          new THREE.SphereBufferGeometry(0.5),
-          new THREE.MeshPhongMaterial({ color: color, shininess: 50 })
+          new THREE.SphereBufferGeometry(0.3),
+          new THREE.MeshPhongMaterial({ color: color, shininess: 10 })
         );
         mesh.position.set(value.x, value.y, value.z);
         group.add(mesh);
       }
 
-      this.parsedPdb.connections.forEach(element => {
-        console.log('->',element);
-      }); 
-      
-      // const start = new THREE.Vector3();
-      // const end = new THREE.Vector3();
+      for (let i = 0; i < this.parsedPdb.connections.length; i++) {
+        // console.log(`-----${i}-----`);
+        for (let j = 0; j < this.parsedPdb.connections[i].length; j++) {
+          const element = this.parsedPdb.connections[i][j];
+          const nextElement = this.parsedPdb.connections[i][j + 1];
 
-      // start.x = Atoms;
+          if (nextElement) {
+            // console.log(`connect ${element} with ${nextElement}`);
+            const start = new THREE.Vector3();
+            const end = new THREE.Vector3();
 
-      // start.multiplyScalar(
-      //   width > height ? width / height + 1 : height / width + 1
-      // );
-      // end.multiplyScalar(
-      //   width > height ? width / height + 1 : height / width + 1
-      // );
-      // const geoBox = new THREE.BoxGeometry(
-      //   0.5,
-      //   0.5,
-      //   start.distanceTo(end)
-      // );
-      // const cylinder = new THREE.Mesh(
-      //   geoBox,
-      //   new THREE.MeshPhongMaterial({ color: 0xffffff })
-      // );
-      // cylinder.position.copy(start);
-      // cylinder.position.lerp(end, 0.5);
-      // cylinder.lookAt(end);
-      // this.scene.add(cylinder);
+            // console.log("DEBUG", { nextAtom: atoms[nextElement], nextElement });
+            start.x = atoms[element].x;
+            start.y = atoms[element].y;
+            start.z = atoms[element].z;
+            end.x = atoms[nextElement].x;
+            end.y = atoms[nextElement].y;
+            end.z = atoms[nextElement].z;
 
+            const geoBox = new THREE.BoxGeometry(
+              0.05,
+              0.05,
+              start.distanceTo(end)
+            );
+
+            const cylinder = new THREE.Mesh(
+              geoBox,
+              new THREE.MeshPhongMaterial({ color: 0xffffff })
+            );
+            cylinder.position.copy(start);
+            cylinder.position.lerp(end, 0.5);
+            cylinder.lookAt(end);
+            cylinder.geometry.parameters.depth = 20;
+            group.add(cylinder);
+          }
+        }
+      }
       return group;
     },
   },

@@ -11,6 +11,8 @@ import { VueNativeBase } from "native-base";
 import AppLoading from "expo-app-loading";
 import * as Font from "expo-font";
 import { Ionicons } from "@expo/vector-icons";
+import { Dimensions } from "react-native";
+import store from "../store";
 
 import App from "../App.vue";
 
@@ -21,11 +23,12 @@ export default {
   components: { App, AppLoading },
   data() {
     return {
-      isAppReady: false
+      isAppReady: false,
     };
   },
   created() {
     this.loadFonts();
+    this.detectOrientation();
   },
   methods: {
     async loadFonts() {
@@ -34,15 +37,35 @@ export default {
         await Font.loadAsync({
           Roboto: require("../../node_modules/native-base/Fonts/Roboto.ttf"),
           Roboto_medium: require("../../node_modules/native-base/Fonts/Roboto_medium.ttf"),
-          ionicons: Ionicons.font["ionicons"]
+          ionicons: Ionicons.font["ionicons"],
         });
         this.isAppReady = true;
       } catch (error) {
         console.log("some error occured", error);
         this.isAppReady = true;
       }
-    }
-  }
+    },
+    async detectOrientation() {
+      ///init orientation
+      if (Dimensions.get("window").width < Dimensions.get("window").height) {
+        store.state.orientation = "PORTRAIT";
+        store.state.currOrientation = "PORTRAIT";
+      } else {
+        store.state.orientation = "LANDSCAPE";
+        store.state.currOrientation = "LANDSCAPE";
+      }
+      // set listneron orientation
+      Dimensions.addEventListener("change", ({ window: { width, height } }) => {
+        if (width < height) {
+          if (store.state.orientation !== "PORTRAIT")
+            store.state.orientation = "PORTRAIT";
+        } else {
+          if (store.state.orientation !== "LANDSCAPE")
+            store.state.orientation = "LANDSCAPE";
+        }
+      });
+    },
+  },
 };
 </script>
 

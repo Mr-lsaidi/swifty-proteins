@@ -16,6 +16,8 @@ const store = new Vuex.Store({
     UserConectionCode: undefined,
     ligands: undefined,
     filtred_ligands: undefined,
+    orientation: undefined,
+    currOrientation: undefined,
     search_loading: false,
     loading: false,
   },
@@ -35,7 +37,7 @@ const store = new Vuex.Store({
     GET_LIGAND(context, param) {
       return new Promise((resolve, reject) => {
         apiRequest()
-          .get(`${param}_model.pdb`)
+          .get(`${param}_ideal.pdb`)
           .then(({ data }) => {
             resolve(data);
           })

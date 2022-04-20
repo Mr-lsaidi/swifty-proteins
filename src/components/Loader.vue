@@ -2,18 +2,18 @@
   <view class="container">
     <view class="box" :style="{ transform: [{ rotate: '45deg' }] }">
       <view class="container">
-        <Swing :size="48" color="rgb(201, 76, 77)" />
+        <Plane :size="48" color="rgb(201, 76, 77)" />
       </view>
     </view>
   </view>
 </template>
 
 <script>
-import { Swing } from "react-native-animated-spinkit";
+import { Plane } from "react-native-animated-spinkit";
 export default {
   name: "loader",
   components: {
-    Swing,
+    Plane,
   },
 };
 </script>
