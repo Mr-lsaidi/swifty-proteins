@@ -32,18 +32,20 @@ export default {
   },
   methods: {
     async loadFonts() {
-      try {
-        this.isAppReady = false;
-        await Font.loadAsync({
-          Roboto: require("../../node_modules/native-base/Fonts/Roboto.ttf"),
-          Roboto_medium: require("../../node_modules/native-base/Fonts/Roboto_medium.ttf"),
-          ionicons: Ionicons.font["ionicons"],
-        });
-        this.isAppReady = true;
-      } catch (error) {
-        console.log("some error occured", error);
-        this.isAppReady = true;
-      }
+      setTimeout(async () => {
+        try {
+          this.isAppReady = false;
+          await Font.loadAsync({
+            Roboto: require("../../node_modules/native-base/Fonts/Roboto.ttf"),
+            Roboto_medium: require("../../node_modules/native-base/Fonts/Roboto_medium.ttf"),
+            ionicons: Ionicons.font["ionicons"],
+          });
+          this.isAppReady = true;
+        } catch (error) {
+          console.log("some error occured", error);
+          this.isAppReady = true;
+        }
+      }, 1000);
     },
     async detectOrientation() {
       ///init orientation

@@ -64,10 +64,12 @@ import { GLView } from "expo-gl";
 import { Renderer } from "expo-three";
 import OrbitControlsView from "expo-three-orbit-controls";
 import parsePdb from "parse-pdb";
-import { Dimensions, Platform, Alert } from "react-native";
+import { Dimensions, Platform, Alert, Text } from "react-native";
 import Logout from "../components/Logout.vue";
 import store from "../store";
-// import { CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
+
+import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry";
+import { FontLoader } from "three/examples/jsm/loaders/FontLoader.js";
 
 export default {
   components: {
@@ -83,10 +85,12 @@ export default {
   },
   async mounted() {
     console.log("Search for: ", this.navigation.getParam("data"));
-    await this.loadPdb(this.navigation.getParam("data") || "0e5");
+    await this.loadPdb(this.navigation.getParam("data") || "co2");
+    this.raycaster = new THREE.Raycaster();
   },
   data() {
     return {
+      font: undefined,
       camera: undefined,
       renderer: undefined,
       controls: undefined,
@@ -124,7 +128,7 @@ export default {
     },
     async _onGLContextCreate(gl) {
       const { drawingBufferWidth: width, drawingBufferHeight: height } = gl;
-      const sceneColor = 0x5353535;
+      const sceneColor = 0xfafafaf;
 
       this.scene = new THREE.Scene();
 
@@ -135,46 +139,45 @@ export default {
 
       this.camera = new THREE.PerspectiveCamera(70, width / height, 0.01, 1000);
       this.camera.position.set(5.0, 5.0, 14.0);
-      // this.camera.position.set(5, 5, 5);
 
       const ambientLight = new THREE.DirectionalLight(0xffffff, 0.9);
       ambientLight.position.copy(this.camera.position);
       this.scene.add(ambientLight);
 
-      var computeGroupCenter = (function() {
-        var childBox = new THREE.Box3();
-        var groupBox = new THREE.Box3();
-        var invMatrixWorld = new THREE.Matrix4();
-        return function(group, optionalTarget) {
-          if (!optionalTarget) optionalTarget = new THREE.Vector3();
-          group.traverse(function(child) {
-            if (child instanceof THREE.Mesh) {
-              if (!child.geometry.boundingBox) {
-                child.geometry.computeBoundingBox();
-                childBox.copy(child.geometry.boundingBox);
-                child.updateMatrixWorld(true);
-                childBox.applyMatrix4(child.matrixWorld);
-                groupBox.min.min(childBox.min);
-                groupBox.max.max(childBox.max);
-              }
-            }
-          });
-          // All computations are in world space
-          // But the group might not be in world space
-          group.matrixWorld.invert(invMatrixWorld);
-          groupBox.applyMatrix4(invMatrixWorld);
-          groupBox.getCenter(optionalTarget);
-          return optionalTarget;
-        };
-      })();
+      // var computeGroupCenter = (function() {
+      //   var childBox = new THREE.Box3();
+      //   var groupBox = new THREE.Box3();
+      //   var invMatrixWorld = new THREE.Matrix4();
+      //   return function(group, optionalTarget) {
+      //     if (!optionalTarget) optionalTarget = new THREE.Vector3();
+      //     group.traverse(function(child) {
+      //       if (child instanceof THREE.Mesh) {
+      //         if (!child.geometry.boundingBox) {
+      //           child.geometry.computeBoundingBox();
+      //           childBox.copy(child.geometry.boundingBox);
+      //           child.updateMatrixWorld(true);
+      //           childBox.applyMatrix4(child.matrixWorld);
+      //           groupBox.min.min(childBox.min);
+      //           groupBox.max.max(childBox.max);
+      //         }
+      //       }
+      //     });
+      //     // All computations are in world space
+      //     // But the group might not be in world space
+      //     group.matrixWorld.invert(invMatrixWorld);
+      //     groupBox.applyMatrix4(invMatrixWorld);
+      //     groupBox.getCenter(optionalTarget);
+      //     return optionalTarget;
+      //   };
+      // })();
 
       var group = this.buildGroup();
-      var center = computeGroupCenter(group);
-      console.log("center is", center);
+      // var center = computeGroupCenter(group);
+      // console.log("center is", center);
       // var axis = new THREE.AxesHelper(7.5);
       // this.scene.add(axis);
       this.scene.add(group);
-      group.position.copy(center).negate(); // move group in the opposite way
+      // group.position.copy(center).negate(); // move group in the opposite way
 
       // Setup an animation loop
       const animated_update = () => {
@@ -186,7 +189,7 @@ export default {
 
       const render = () => {
         requestAnimationFrame(render);
-        this.renderer.render(this.scene, this.camera);
+
         ambientLight.position.set(
           this.camera.position.x,
           this.camera.position.y,
@@ -194,6 +197,7 @@ export default {
         );
 
         animated_update();
+        this.renderer.render(this.scene, this.camera);
         gl.endFrameEXP();
       };
       render();
@@ -242,6 +246,26 @@ export default {
           ]);
         });
     },
+    createText(text, group, x, y, z) {
+      const loader = new FontLoader();
+      loader.load(
+        "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/fonts/helvetiker_bold.typeface.json",
+        (font) => {
+          var textGeo = new TextGeometry(text, {
+            font: font,
+            size: 0.2,
+            height: 0.1,
+          });
+
+          var textMat = new THREE.MeshLambertMaterial({ color: 0x535353 });
+
+          var textMesh = new THREE.Mesh(textGeo, textMat);
+          textMesh.position.set(x, y, z + 0.4);
+          // textMesh.lookAt(this.textMesh.position);
+          group.add(textMesh);
+        }
+      );
+    },
     buildGroup() {
       const COLORS = [0xffffff, 0xd40000, 0x0084ff];
       const group = new THREE.Group();
@@ -254,6 +278,9 @@ export default {
           new THREE.MeshPhongMaterial({ color: color, shininess: 10 })
         );
         mesh.position.set(value.x, value.y, value.z);
+
+        this.createText(value.name, group, value.x, value.y, value.z);
+
         group.add(mesh);
       }
 
@@ -284,7 +311,7 @@ export default {
 
             const cylinder = new THREE.Mesh(
               geoBox,
-              new THREE.MeshPhongMaterial({ color: 0xffffff })
+              new THREE.MeshPhongMaterial({ color: 0xe0e0e0e0 })
             );
             cylinder.position.copy(start);
             cylinder.position.lerp(end, 0.5);

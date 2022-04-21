@@ -1,6 +1,11 @@
 {
   "expo": {
     "icon": "./assets/nblogo.png",
+    "splash": {
+      "image": "./assets/splash-screen.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#cccccc"
+    },
     "slug": "lsaidi",
     "orientation": "default",
     "primaryColor": "#cccccc",
