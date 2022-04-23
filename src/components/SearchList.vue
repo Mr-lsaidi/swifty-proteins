@@ -33,7 +33,14 @@
 
 <script>
 import store from "../store";
+import { Alert } from "react-native";
+import parsePdb from "parse-pdb";
+import Loader from "../components/Loader.vue";
+
 export default {
+  components: {
+    Loader,
+  },
   props: {
     item: {
       type: Object,
@@ -46,15 +53,57 @@ export default {
   },
   data() {
     return {
+      loading: true,
       store,
+      parsedPdb: undefined,
     };
   },
   methods: {
-    selectLigand(elem) {
+    async selectLigand(elem) {
       console.log("click", elem);
-      this.navigation.navigate("DisplayModules", {
-        data: elem,
-      });
+      store.state.loading = true;
+      store
+        .dispatch("GET_LIGAND", elem)
+        .then((string) => {
+          // console.log(string);
+          return {
+            parsedPdb: parsePdb(string),
+            connections: [...(string.match(/^CONECT.*/gm) || [])].map(
+              (connection) => {
+                const connectionIds = connection
+                  .replace(/(CONECT| +)/g, " ")
+                  .trim()
+                  .split(" ");
+                return connectionIds.map((num) => parseInt(num, 10));
+              }
+            ),
+          };
+        })
+        .then(({ parsedPdb, connections }) => {
+          const atomsMap = {};
+
+          parsedPdb.atoms.forEach(function addToMap(atom) {
+            atomsMap[atom.serial] = atom;
+          });
+
+          this.parsedPdb = {
+            atoms: atomsMap,
+            connections,
+          };
+          store.state.loading = false;
+          this.navigation.navigate("DisplayModules", {
+            data: this.parsedPdb,
+          });
+        })
+        .catch((err) => {
+          console.log(err);
+          store.state.loading = false;
+          Alert.alert("Lignd not found", "😃", [
+            {
+              text: "Cancel",
+            },
+          ]);
+        });
     },
   },
 };

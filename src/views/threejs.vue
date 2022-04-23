@@ -1,59 +1,18 @@
 <template>
-  <view class="container">
-    <Loader v-if="store.state.loading" />
-    <nb-container v-else>
-      <nb-header
-        :style="{ backgroundColor: 'rgb(201, 76, 77)' }"
-        androidStatusBarColor="rgb(201, 76, 77)"
-        iosBarStyle="light-content"
-      >
-        <nb-left>
-          <nb-button
-            transparent
-            :onPress="() => this.props.navigation.navigate('Search')"
-          >
-            <nb-icon
-              name="arrow-back"
-              class="text-color-white"
-              :style="{ color: '#fff' }"
-            />
-          </nb-button>
-        </nb-left>
-        <nb-body>
-          <nb-title :style="{ color: '#fff' }">Display module</nb-title>
-        </nb-body>
-        <nb-right v-if="store.state.isEnrolledAsync">
-          <Logout :navigation="navigation" />
-        </nb-right>
-      </nb-header>
-      <OrbitControlsView
-        :key="store.state.orientation"
-        :style="{ flex: 1 }"
-        :camera="camera"
-      >
-        <GLView :style="{ flex: 1 }" :onContextCreate="_onGLContextCreate" />
-      </OrbitControlsView>
-
-      <nb-footer>
-        <nb-footer-tab>
-          <nb-button :onPress="zoomOut">
-            <nb-icon name="remove" />
-          </nb-button>
-
-          <nb-button :onPress="zoomIn">
-            <nb-icon name="add" />
-          </nb-button>
-
-          <nb-button>
-            <nb-icon name="share-social-outline" />
-          </nb-button>
-
-          <nb-button :onPress="animate">
-            <nb-icon name="sync-outline" />
-          </nb-button>
-        </nb-footer-tab>
-      </nb-footer>
-    </nb-container>
+  <view :style="{ flex: 1 }">
+    <Wave
+        :size="50"
+        :style="{ alignSelf: 'center', position: 'absolute', top: '45%' }"
+        color="rgb(201, 76, 77)"
+        v-if="renderLoader"
+      />
+    <OrbitControlsView
+      :key="store.state.orientation"
+      :style="{ flex: 1 }"
+      :camera="store.state.camera"
+    >
+      <GLView :style="{ flex: 1 }" :onContextCreate="_onGLContextCreate" />
+    </OrbitControlsView>
   </view>
 </template>
 
@@ -63,13 +22,10 @@ import * as THREE from "three";
 import { GLView } from "expo-gl";
 import { Renderer } from "expo-three";
 import OrbitControlsView from "expo-three-orbit-controls";
-import parsePdb from "parse-pdb";
-import { Dimensions, Platform, Alert, Text } from "react-native";
 import Logout from "../components/Logout.vue";
 import store from "../store";
-
 import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry";
-import { FontLoader } from "three/examples/jsm/loaders/FontLoader.js";
+import { Wave } from "react-native-animated-spinkit";
 
 export default {
   components: {
@@ -77,225 +33,228 @@ export default {
     Logout,
     OrbitControlsView,
     Loader,
+    Wave
   },
   props: {
     navigation: {
       type: Object,
     },
   },
-  async mounted() {
-    console.log("Search for: ", this.navigation.getParam("data"));
-    await this.loadPdb(this.navigation.getParam("data") || "co2");
-    this.raycaster = new THREE.Raycaster();
-  },
   data() {
     return {
-      font: undefined,
-      camera: undefined,
-      renderer: undefined,
-      controls: undefined,
-      sence: undefined,
-      animated: false,
-      parsedPdb: {},
+      loading: true,
       store,
-      stylesObj: {
-        logoContainerStyle: {
-          marginTop: Dimensions.get("window").height / 8,
-        },
-        logoStyle: {
-          left: Platform.OS === "android" ? 40 : 50,
-          top: Platform.OS === "android" ? 35 : 60,
-        },
-        btnContainer: {
-          backgroundColor: "#6faf98",
-          alignSelf: "center",
-        },
-      },
+      raycaster: undefined,
+      renderLoader: false
     };
   },
+  created() {
+    console.log("init");
+    this.renderLoader = true;
+
+    store.state.parsedPdb = this.navigation.getParam("data");
+    // this.loading = true;
+    const raycaster = new THREE.Raycaster();
+    this.beforeRender();
+  },
   methods: {
-    zoomIn() {
-      console.log(this.camera.fov);
-      this.camera.fov -= 5;
-      this.camera.updateProjectionMatrix();
+    // Setup an animation loop
+    animated_update() {
+      if (store.state.animation) {
+        store.state.scene.rotation.x += 0.02;
+        store.state.scene.rotation.y += 0.02;
+      }
     },
-    zoomOut() {
-      this.camera.fov += 5;
-      this.camera.updateProjectionMatrix();
+    beforeRender() {
+      let i = 0;
+      let j = 0;
+      if (store.state.group && store.state.scene) {
+        i = 0;
+        j = 0;
+        store.state.group.traverse((object) => {
+          if (!object.isMesh) return;
+
+          store.state.scene.remove(object);
+
+          object.geometry.dispose();
+          if (object.material.isMaterial) {
+            this.cleanMaterial(object.material);
+            j += 1;
+          } else {
+            // an array of materials
+            for (const material of object.material)
+              this.cleanMaterial(material);
+            j += 1;
+          }
+
+          object.geometry = undefined;
+          object = undefined;
+          i += 1;
+        });
+        store.state.scene.remove(store.state.group);
+        store.state.group = undefined;
+        console.log(`group 1 clean ${i} mesh`);
+        console.log(`group 1 clean ${j} material`);
+      }
+      if (store.state.labelsGroup && store.state.scene) {
+        i = 0;
+        j = 0;
+        store.state.labelsGroup.traverse((object) => {
+          if (!object.isMesh) return;
+
+          store.state.scene.remove(object);
+          object.geometry.dispose();
+          if (object.material.isMaterial) {
+            this.cleanMaterial(object.material);
+            j += 1;
+          } else {
+            // an array of materials
+            for (const material of object.material)
+              this.cleanMaterial(material);
+            j += 1;
+          }
+
+          object.geometry = undefined;
+          object = undefined;
+          i += 1;
+        });
+        store.state.scene.remove(store.state.labelsGroup);
+        store.state.labelsGroup = undefined;
+        console.log(`group 2 clean ${i} mesh`);
+        console.log(`group 2 clean ${j} material`);
+      }
     },
-    animate() {
-      this.animated = !this.animated;
+    cleanMaterial(material) {
+      const i = 0;
+      // dispose textures
+      for (const key of Object.keys(material)) {
+        const value = material[key];
+        if (value && typeof value === "object" && "minFilter" in value) {
+          console.log("dispose texture! " + key);
+          value.dispose();
+        }
+      }
+      material.dispose();
+      material = undefined;
     },
     async _onGLContextCreate(gl) {
       const { drawingBufferWidth: width, drawingBufferHeight: height } = gl;
-      const sceneColor = 0xfafafaf;
 
-      this.scene = new THREE.Scene();
+      store.state.scene = new THREE.Scene();
 
       // Create a WebGLRenderer without a DOM element
-      this.renderer = new Renderer({ gl });
-      this.renderer.setSize(width, height);
-      this.renderer.setClearColor(sceneColor);
+      store.state.renderer = new Renderer({ gl });
+      store.state.renderer.setSize(width, height);
+      store.state.renderer.setClearColor("#FFFFFF");
 
-      this.camera = new THREE.PerspectiveCamera(70, width / height, 0.01, 1000);
-      this.camera.position.set(5.0, 5.0, 14.0);
+      store.state.camera = new THREE.PerspectiveCamera(
+        75,
+        width / height,
+        2,
+        80
+      );
+      store.state.camera.position.set(5.0, 5.0, 10.0);
+      store.state.camera.lookAt(0, 0, 0);
 
-      const ambientLight = new THREE.DirectionalLight(0xffffff, 0.9);
-      ambientLight.position.copy(this.camera.position);
-      this.scene.add(ambientLight);
+      store.state.group = await this.buildGroup();
 
-      // var computeGroupCenter = (function() {
-      //   var childBox = new THREE.Box3();
-      //   var groupBox = new THREE.Box3();
-      //   var invMatrixWorld = new THREE.Matrix4();
-      //   return function(group, optionalTarget) {
-      //     if (!optionalTarget) optionalTarget = new THREE.Vector3();
-      //     group.traverse(function(child) {
-      //       if (child instanceof THREE.Mesh) {
-      //         if (!child.geometry.boundingBox) {
-      //           child.geometry.computeBoundingBox();
-      //           childBox.copy(child.geometry.boundingBox);
-      //           child.updateMatrixWorld(true);
-      //           childBox.applyMatrix4(child.matrixWorld);
-      //           groupBox.min.min(childBox.min);
-      //           groupBox.max.max(childBox.max);
-      //         }
-      //       }
-      //     });
-      //     // All computations are in world space
-      //     // But the group might not be in world space
-      //     group.matrixWorld.invert(invMatrixWorld);
-      //     groupBox.applyMatrix4(invMatrixWorld);
-      //     groupBox.getCenter(optionalTarget);
-      //     return optionalTarget;
-      //   };
-      // })();
+      store.state.sceneLight = new THREE.DirectionalLight(0xffffff, 0.9);
+      store.state.sceneLight.position.copy(store.state.camera.position);
+      store.state.scene.add(store.state.sceneLight);
 
-      var group = this.buildGroup();
-      // var center = computeGroupCenter(group);
-      // console.log("center is", center);
+      store.state.scene.add(store.state.group);
+      store.state.scene.add(store.state.labelsGroup);
+
+      //  this.loading = false;
+      console.log("end init");
+      this.renderLoader = false;
+
       // var axis = new THREE.AxesHelper(7.5);
-      // this.scene.add(axis);
-      this.scene.add(group);
-      // group.position.copy(center).negate(); // move group in the opposite way
-
-      // Setup an animation loop
-      const animated_update = () => {
-        if (this.animated) {
-          this.scene.rotation.x += 0.02;
-          this.scene.rotation.y += 0.02;
-        }
-      };
+      // store.state.group.add(axis);
 
       const render = () => {
         requestAnimationFrame(render);
 
-        ambientLight.position.set(
-          this.camera.position.x,
-          this.camera.position.y,
-          this.camera.position.z
+        store.state.sceneLight.position.set(
+          store.state.camera.position.x,
+          store.state.camera.position.y,
+          store.state.camera.position.z
         );
 
-        animated_update();
-        this.renderer.render(this.scene, this.camera);
+        this.animated_update();
+        store.state.renderer.render(store.state.scene, store.state.camera);
+
         gl.endFrameEXP();
       };
       render();
     },
-    loadPdb(pdb) {
-      store.state.loading = true;
-      store
-        .dispatch("GET_LIGAND", pdb)
-        .then((string) => {
-          // console.log(string);
-          return {
-            parsedPdb: parsePdb(string),
-            connections: [...(string.match(/^CONECT.*/gm) || [])].map(
-              (connection) => {
-                const connectionIds = connection
-                  .replace(/(CONECT| +)/g, " ")
-                  .trim()
-                  .split(" ");
-                return connectionIds.map((num) => parseInt(num, 10));
-              }
-            ),
-          };
-          s;
-        })
-        .then(({ parsedPdb, connections }) => {
-          const atomsMap = {};
-
-          parsedPdb.atoms.forEach(function addToMap(atom) {
-            atomsMap[atom.serial] = atom;
-          });
-
-          this.parsedPdb = {
-            atoms: atomsMap,
-            connections,
-          };
-          store.state.loading = false;
-          // console.log("-->", this.parsedPdb);
-        })
-        .catch((err) => {
-          console.log(err);
-          store.state.loading = false;
-          Alert.alert("Lignd not found", "😃", [
-            {
-              text: "Cancel",
-            },
-          ]);
-        });
-    },
-    createText(text, group, x, y, z) {
-      const loader = new FontLoader();
-      loader.load(
-        "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/fonts/helvetiker_bold.typeface.json",
-        (font) => {
-          var textGeo = new TextGeometry(text, {
-            font: font,
-            size: 0.2,
-            height: 0.1,
-          });
-
-          var textMat = new THREE.MeshLambertMaterial({ color: 0x535353 });
-
-          var textMesh = new THREE.Mesh(textGeo, textMat);
-          textMesh.position.set(x, y, z + 0.4);
-          // textMesh.lookAt(this.textMesh.position);
-          group.add(textMesh);
-        }
-      );
-    },
-    buildGroup() {
-      const COLORS = [0xffffff, 0xd40000, 0x0084ff];
+    async buildGroup() {
+      this.beforeRender();
+      // const COLORS = [0xffffff, 0xd40000, 0x0084ff];
       const group = new THREE.Group();
-      const atoms = this.parsedPdb.atoms;
-
+      store.state.labelsGroup = new THREE.Group();
+      try {
+        this.drowAtoms(group);
+        store.state.labelsGroup.visible = false;
+        this.drowConnections(group);
+        return group;
+      } catch (err) {
+        return err;
+      }
+    },
+    drowAtoms(group) {
+      const atoms = store.state.parsedPdb.atoms;
       for (let [key, value] of Object.entries(atoms)) {
-        var color = COLORS[Math.floor(Math.random() * COLORS.length)];
+        // var color = COLORS[Math.floor(Math.random() * COLORS.length)];
         var mesh = new THREE.Mesh(
           new THREE.SphereBufferGeometry(0.3),
-          new THREE.MeshPhongMaterial({ color: color, shininess: 10 })
+          new THREE.MeshPhongMaterial({ color: 0xd40000, shininess: 1 })
         );
         mesh.position.set(value.x, value.y, value.z);
 
-        this.createText(value.name, group, value.x, value.y, value.z);
+        this.createText(value.name, value.x, value.y, value.z);
 
+        mesh.updateMatrix();
+        mesh.matrixAutoUpdate = false;
         group.add(mesh);
       }
+    },
+    createText(text, x, y, z) {
+      const height = 0.01,
+        size = 0.1,
+        curveSegments = 0.01,
+        bevelThickness = 0.01,
+        bevelSize = 0.01;
+      var textGeo = new TextGeometry(text, {
+        font: store.state.mech_font,
 
-      for (let i = 0; i < this.parsedPdb.connections.length; i++) {
+        size: size,
+        height: height,
+        curveSegments: curveSegments,
+
+        bevelThickness: bevelThickness,
+        bevelSize: bevelSize,
+        bevelEnabled: true,
+      });
+
+      var textMat = new THREE.MeshPhongMaterial({ color: "#FFFF00" });
+
+      const textMesh = new THREE.Mesh(textGeo, textMat);
+      textMesh.position.set(x, y, z + 0.4);
+      store.state.labelsGroup.add(textMesh);
+    },
+    drowConnections(group) {
+      const atoms = store.state.parsedPdb.atoms;
+      for (let i = 0; i < store.state.parsedPdb.connections.length; i++) {
         // console.log(`-----${i}-----`);
-        for (let j = 0; j < this.parsedPdb.connections[i].length; j++) {
-          const element = this.parsedPdb.connections[i][j];
-          const nextElement = this.parsedPdb.connections[i][j + 1];
+        for (let j = 0; j < store.state.parsedPdb.connections[i].length; j++) {
+          const element = store.state.parsedPdb.connections[i][j];
+          const nextElement = store.state.parsedPdb.connections[i][j + 1];
 
           if (nextElement) {
-            // console.log(`connect ${element} with ${nextElement}`);
             const start = new THREE.Vector3();
             const end = new THREE.Vector3();
 
-            // console.log("DEBUG", { nextAtom: atoms[nextElement], nextElement });
             start.x = atoms[element].x;
             start.y = atoms[element].y;
             start.z = atoms[element].z;
@@ -311,7 +270,7 @@ export default {
 
             const cylinder = new THREE.Mesh(
               geoBox,
-              new THREE.MeshPhongMaterial({ color: 0xe0e0e0e0 })
+              new THREE.MeshPhongMaterial({ color: "#607466" })
             );
             cylinder.position.copy(start);
             cylinder.position.lerp(end, 0.5);
@@ -321,22 +280,7 @@ export default {
           }
         }
       }
-      return group;
     },
   },
 };
 </script>
-
-<style>
-.container {
-  flex: 1;
-}
-.content-wrapper {
-  background-color: #fff;
-  padding: 20;
-}
-.view-wrapper-1 {
-  flex-direction: row;
-  justify-content: space-between;
-}
-</style>

@@ -3,6 +3,8 @@ import Vuex from "vuex";
 import ligands from "../../assets/ligands";
 import { Toast } from "native-base";
 import { apiRequest } from "../api";
+import { FontLoader } from "three/examples/jsm/loaders/FontLoader.js";
+import * as THREE from "three";
 
 Vue.use(Vuex);
 
@@ -20,6 +22,19 @@ const store = new Vuex.Store({
     currOrientation: undefined,
     search_loading: false,
     loading: false,
+    mech_font: undefined,
+
+    //drowing part
+    group: new THREE.Group(),
+    labelsGroup: new THREE.Group(),
+    font: undefined,
+    camera: undefined,
+    renderer: undefined,
+    controls: undefined,
+    sence: undefined,
+    animation: false,
+    parsedPdb: undefined,
+    sceneLight: undefined,
   },
   mutations: {
     UPDATE_FILRE_LIGEANDS(state, data) {
@@ -32,8 +47,26 @@ const store = new Vuex.Store({
       state.filtred_ligands = data;
       state.ligands = data;
     },
+    SET_MESH_FONT(state, data) {
+      state.mech_font = data;
+    },
   },
   actions: {
+    LOAD_MESH_FONT(context) {
+      const loader = new FontLoader();
+      loader.load(
+        "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/fonts/helvetiker_regular.typeface.json",
+        (font) => {
+          // do something with the font
+          context.commit("SET_MESH_FONT", font);
+        },
+        // onError callback
+        (err) => {
+          console.log("font load: An error happened", err);
+          context.commit("SET_MESH_FONT", null);
+        }
+      );
+    },
     GET_LIGAND(context, param) {
       return new Promise((resolve, reject) => {
         apiRequest()

@@ -40,6 +40,7 @@ export default {
             Roboto_medium: require("../../node_modules/native-base/Fonts/Roboto_medium.ttf"),
             ionicons: Ionicons.font["ionicons"],
           });
+          await store.dispatch("LOAD_MESH_FONT");
           this.isAppReady = true;
         } catch (error) {
           console.log("some error occured", error);

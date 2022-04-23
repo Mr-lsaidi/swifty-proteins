@@ -13,7 +13,7 @@ import {
 } from "vue-native-router";
 import { Root } from "native-base";
 import HomeScreen from "./views/home.vue";
-import DisplayModules from "./views/threejs.vue";
+import DisplayModules from "./views/Display.vue";
 import Search from "./views/Search.vue";
 
 const StackNavigator = createStackNavigator(
